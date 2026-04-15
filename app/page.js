@@ -50,11 +50,10 @@ export default async function Home() {
       {/* Hero Section */}
       <div className="max-w-5xl mx-auto text-center space-y-8">
         <h1 className="text-5xl md:text-7xl lg:text-8xl gradient-title mb-6">
-          Your Space to Reflect. <br /> Your Story to Tell.
+          Organize Your Mind. <br /> Own Your Story.
         </h1>
         <p className="text-lg md:text-xl text-orange-800 mb-8">
-          Capture your thoughts, track your moods, and reflect on your journey
-          in a beautiful, secure space.
+          ManageNote brings your notes, ideas, and journal together — structured, secure, and beautifully simple.
         </p>
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-t from-orange-50 via-transparent to-transparent pointer-events-none z-10" />
@@ -223,11 +222,11 @@ export default async function Home() {
         <Card className="bg-gradient-to-r from-orange-100 to-amber-100">
           <CardContent className="p-12 text-center">
             <h2 className="text-3xl font-bold text-orange-900 mb-6">
-              Start Reflct-ing on Your Journey Today
+              Start Organizing Your Thoughts Today
             </h2>
             <p className="text-lg text-orange-700 mb-8 max-w-2xl mx-auto">
-              Join thousands of writers who have already discovered the power of
-              digital journaling.
+              Join thousands of users who have already discovered the power of
+              digital note-taking.
             </p>
             <Button size="lg" variant="journal" className="animate-bounce">
               Get Started for Free <ChevronRight className="ml-2 h-4 w-4" />
