@@ -4,9 +4,10 @@ import Link from "next/link";
 import { Button } from "./ui/button";
 import { PenBox, FolderOpen } from "lucide-react";
 import UserMenu from "./user-menu";
+import { checkUser } from "@/lib/checkUser";
 
-
-const Header = () => {
+const Header = async() => {
+  await checkUser();
   return (
     <header className="w-full bg-cyan-100">
       <nav className="max-w-6xl mx-auto py-6 px-4 flex justify-between items-center">

@@ -1,7 +1,8 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { use, useState ,useEffect } from "react";
+
 import React from "react"; 
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,9 +20,22 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import useFetch from "@/hooks/use-fetch";
+import { useRouter } from "next/navigation";
+import { createJournalEntry } from "@/actions/journal";
+import { toast } from "sonner";
 
 
 const JounalEntryPage = () => {
+
+  const{
+    loading: actionLoading,
+    fn: actionFn,
+    data: actionResult,
+  } = useFetch(createJournalEntry);
+
+  const router = useRouter();
+  
 
     const { register, handleSubmit, control, getValues,watch,
     formState: { errors }, 
@@ -36,8 +50,36 @@ const JounalEntryPage = () => {
     });
     const selectedMood = watch("mood");// Watch the mood field to get the selected mood's ID (Me:2.0)
 
-    const isLoading = false;
-    const onSubmit = handleSubmit(async() => {});
+    const isLoading = actionLoading; 
+
+    useEffect(() => {
+    if (actionResult && !actionLoading) {
+      // Clear draft after successful publish
+      // if (!isEditMode) {
+      //   saveDraftFn({ title: "", content: "", mood: "" });
+      // }
+
+      router.push(
+        `/collection/${
+          actionResult.collectionId ? actionResult.collectionId : "unorganized"
+        }`
+      );
+
+      toast.success( 'Entry created successfully!' 
+        // `Entry ${isEditMode ? "updated" : "created"} successfully!`
+      );
+    }
+  }, [actionResult, actionLoading]);
+
+    const onSubmit = handleSubmit(async (data) => {
+      const mood = getMoodById(data.mood);
+      actionFn({
+        ...data,
+        moodScore: mood.score,
+        moodQuery: mood.pixabayQuery,
+        // ...(isEditMode && { id: editId }),
+      });
+    });
 
     return (
       <div className="p-8">
@@ -126,10 +168,26 @@ const JounalEntryPage = () => {
           <label className="text-sm font-medium">
             Add to Collection (NEXT FEATURE)
           </label>
-          {/* <Controller
-            
-          />NEST TIME */} 
-
+          <Controller
+            name="collectionId"
+            control={control}
+            render={({ field }) => (
+              <Select onValueChange={field.onChange} value={field.value}>
+                <SelectTrigger className={errors.mood ? "border-red-500" : ""}>
+                  <SelectValue placeholder="Select a mood..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.values(MOODS).map((mood) => (
+                    <SelectItem key={mood.id} value={mood.id}>
+                      <span className="flex items-center gap-2">
+                        {mood.emoji} {mood.label}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
         </div>
 
         <div className="space-x-4 flex">
