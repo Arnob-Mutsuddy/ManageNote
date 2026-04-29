@@ -1,8 +1,8 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import dynamic from "next/dynamic";
-import { use, useState ,useEffect } from "react";
-
+import { use, useState ,useEffect, act } from "react";
+import { useSearchParams } from "next/navigation";
 import React from "react"; 
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,9 +24,27 @@ import useFetch from "@/hooks/use-fetch";
 import { useRouter } from "next/navigation";
 import { createJournalEntry } from "@/actions/journal";
 import { toast } from "sonner";
+import CollectionForm from "@/components/collection-form";
 
+import { createCollection, getCollections } from "@/actions/collection";
 
 const JounalEntryPage = () => {
+  const searchParams = useSearchParams();
+  const editId = searchParams.get("edit");
+  const [isEditMode, setIsEditMode] = useState(false);
+
+  const [isCollectionDialogOpen, setIsCollectionDialogOpen] = useState(false);
+
+    const {
+    loading: collectionsLoading,
+    data: collections,
+    fn: fetchCollections,
+  } = useFetch(getCollections);
+    const {
+    loading: createCollectionLoading,
+    fn: createCollectionFn,
+    data: createdCollection,
+  } = useFetch(createCollection);
 
   const{
     loading: actionLoading,
@@ -34,11 +52,13 @@ const JounalEntryPage = () => {
     data: actionResult,
   } = useFetch(createJournalEntry);
 
+
+
   const router = useRouter();
   
 
     const { register, handleSubmit, control, getValues,watch,
-    formState: { errors }, 
+    formState: { errors }, setValue,
     } = useForm({
         resolver:zodResolver(journalSchema),
         defaultValues: {
@@ -48,9 +68,16 @@ const JounalEntryPage = () => {
             collectionId: "",
         },
     });
+
+    useEffect(() => {
+    fetchCollections();
+    
+  }, []);
+
+
     const selectedMood = watch("mood");// Watch the mood field to get the selected mood's ID (Me:2.0)
 
-    const isLoading = actionLoading; 
+    
 
     useEffect(() => {
     if (actionResult && !actionLoading) {
@@ -80,6 +107,21 @@ const JounalEntryPage = () => {
         // ...(isEditMode && { id: editId }),
       });
     });
+
+  // Handle collection creation success
+  useEffect(() => {
+    if (createdCollection) {
+      setIsCollectionDialogOpen(false);
+      fetchCollections();
+      setValue("collectionId", createdCollection.id);
+      toast.success(`Collection ${createdCollection.name} created!`);
+    }
+  }, [createdCollection]);
+
+  const handleCreateCollection = async (data) => {
+    createCollectionFn(data);
+  };
+  const isLoading = actionLoading || collectionsLoading;
 
     return (
       <div className="p-8">
@@ -172,26 +214,39 @@ const JounalEntryPage = () => {
             name="collectionId"
             control={control}
             render={({ field }) => (
-              <Select onValueChange={field.onChange} value={field.value}>
-                <SelectTrigger className={errors.mood ? "border-red-500" : ""}>
-                  <SelectValue placeholder="Select a mood..." />
+              <Select
+                onValueChange={(value) => {
+                  if (value === "new") {
+                    setIsCollectionDialogOpen(true);
+                  } else {
+                    field.onChange(value);
+                  }
+                }}
+                value={field.value}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a collection..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.values(MOODS).map((mood) => (
-                    <SelectItem key={mood.id} value={mood.id}>
-                      <span className="flex items-center gap-2">
-                        {mood.emoji} {mood.label}
-                      </span>
+                  {collections?.map((collection) => (
+                    <SelectItem key={collection.id} value={collection.id}>
+                      {collection.name}
                     </SelectItem>
                   ))}
+                  <SelectItem value="new">
+                    <span className="text-orange-600">
+                      + Create New Collection
+                    </span>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             )}
           />
+
         </div>
 
         <div className="space-x-4 flex">
-          <Button type="submit" variant="journal" >
+          <Button type="submit" variant="journal" disabled={actionLoading}>
             Publish
           </Button>
           
@@ -202,6 +257,12 @@ const JounalEntryPage = () => {
 
 
         </form>
+        <CollectionForm
+        loading={createCollectionLoading}
+        onSuccess={handleCreateCollection}
+        open={isCollectionDialogOpen}
+        setOpen={setIsCollectionDialogOpen}
+      />
       </div>
     );
 }; 

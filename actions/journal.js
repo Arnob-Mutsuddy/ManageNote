@@ -1,4 +1,5 @@
 "use server";
+import { getMoodById } from "@/app/lib/moods"; 
 import { db } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { da, th } from "date-fns/locale";
@@ -68,4 +69,65 @@ export async function createJournalEntry(data) {
     } catch (error) {
         throw new Error(error.message || "Failed to create journal entry");
     }
+}
+
+
+
+
+
+export async function getJournalEntries({
+  collectionId,
+  orderBy = "desc", 
+} = {}) {
+  try {
+    const { userId } = await auth();
+    if (!userId) throw new Error("Unauthorized");
+
+    const user = await db.user.findUnique({
+      where: { clerkUserId: userId },
+    });
+
+    if (!user) throw new Error("User not found");
+
+    const where = {
+      userId: user.id,
+
+      ...(collectionId === "unorganized"
+        ? { collectionId: null }
+        : collectionId
+        ? { collectionId }
+        : {}),
+
+    };
+
+    const entries = await db.entry.findMany({
+      where,
+      include: {
+        collection: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: orderBy,
+      },
+ 
+    });
+
+    const entriesWithMoodData = entries.map((entry) => ({
+      ...entry,
+      moodData: getMoodById(entry.mood),
+    }));
+
+    return {
+      success: true,
+      data: {
+        entries: entriesWithMoodData,
+      },
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
 }
