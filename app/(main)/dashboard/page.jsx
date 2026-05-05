@@ -28,7 +28,7 @@ console.log("entriesData:", JSON.stringify(entriesData, null, 2));
     <div className="px-4 py-8 space-y-8">
       {/* Analytics Section */}
       <section className="space-y-4">
-        {/* <MoodAnalytics /> */}
+        <MoodAnalytics />
       </section>
 
       <Collections
